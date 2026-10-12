@@ -265,10 +265,7 @@ final class Harika_Connector {
         ?>
         <div class="wrap">
             <h1>Harika Connector</h1>
-            <div class="notice notice-info inline">
-                <p>Diese Angaben gehören zur <strong>Website in Harika</strong>, nicht zu den Kundenstammdaten. Firmenname, Adresse und Kontakt sind keine Zugangsdaten. Bei der Website steht die Umgebung, zum Beispiel Produktion. Control-Endpunkt, Client-ID, Site-ID und Site-Token müssen zu genau dieser Website gehören. WordPress liest sie nicht aus Harika aus. Was hier schon steht, ist in WordPress gespeichert.</p>
-            </div>
-            <p>Der Site-Token wird mit den WordPress-Server-Salts verschlüsselt gespeichert und niemals im Browser ausgegeben.</p>
+            <p>Der Site-Token wird verschlüsselt gespeichert und nicht wieder angezeigt. Werte aus Harika hier eintragen, dann speichern.</p>
             <?php settings_errors(self::OPTION_NAME); ?>
             <form action="options.php" method="post" autocomplete="off">
                 <?php settings_fields('ccf_gads'); ?>
@@ -277,21 +274,21 @@ final class Harika_Connector {
                         <th scope="row"><label for="ccf-gads-endpoint">Control-Endpunkt</label></th>
                         <td>
                             <input class="regular-text code" id="ccf-gads-endpoint" name="<?php echo esc_attr(self::OPTION_NAME); ?>[endpoint]" type="url" required value="<?php echo esc_attr($endpoint); ?>" <?php echo $endpoint_locked ? 'readonly' : ''; ?>>
-                            <p class="description">Adresse des Harika-Dienstes für diese Website. Sie wird nicht automatisch eingetragen und steht nicht in den Kundenstammdaten. <?php echo $endpoint_locked ? 'Dieser Wert kommt aus der Server-Konfiguration und gilt statt des gespeicherten Felds.' : 'Eine schon eingetragene Adresse ist in WordPress gespeichert.'; ?></p>
+                            <p class="description">Adresse aus Harika.<?php echo $endpoint_locked ? ' Dieser Wert kommt aus der Server-Konfiguration und gilt statt des gespeicherten Felds.' : ''; ?></p>
                         </td>
                     </tr>
                     <tr>
                         <th scope="row"><label for="ccf-gads-client">Client-ID</label></th>
                         <td>
                             <input class="regular-text code" id="ccf-gads-client" name="<?php echo esc_attr(self::OPTION_NAME); ?>[client_id]" type="text" required value="<?php echo esc_attr($client_id); ?>" <?php echo $client_locked ? 'readonly' : ''; ?>>
-                            <p class="description">Technischer Kundenschlüssel dieser Verbindung. Nicht der Firmenname, nicht die Geschäftsbezeichnung und kein Feld aus den Kundenstammdaten. <?php echo $client_locked ? 'Dieser Wert kommt aus der Server-Konfiguration und gilt statt des gespeicherten Felds.' : 'Er gehört zur Website, nicht zum Kundenstamm.'; ?></p>
+                            <p class="description">Technischer Schlüssel dieser Verbindung.<?php echo $client_locked ? ' Dieser Wert kommt aus der Server-Konfiguration und gilt statt des gespeicherten Felds.' : ''; ?></p>
                         </td>
                     </tr>
                     <tr>
                         <th scope="row"><label for="ccf-gads-site">Site-ID</label></th>
                         <td>
                             <input class="regular-text code" id="ccf-gads-site" name="<?php echo esc_attr(self::OPTION_NAME); ?>[site_id]" type="text" required value="<?php echo esc_attr($site_id); ?>" <?php echo $site_locked ? 'readonly' : ''; ?>>
-                            <p class="description">Technischer Schlüssel genau dieser Website, nicht die Domain. <?php echo $site_locked ? 'Dieser Wert kommt aus der Server-Konfiguration und gilt statt des gespeicherten Felds.' : 'Er gehört zur Website, nicht zum Kundenstamm.'; ?></p>
+                            <p class="description">Technischer Schlüssel dieser Website.<?php echo $site_locked ? ' Dieser Wert kommt aus der Server-Konfiguration und gilt statt des gespeicherten Felds.' : ''; ?></p>
                         </td>
                     </tr>
                     <tr>
@@ -305,14 +302,14 @@ final class Harika_Connector {
                             <?php if ($environment_locked) : ?>
                                 <input type="hidden" name="<?php echo esc_attr(self::OPTION_NAME); ?>[environment]" value="<?php echo esc_attr($environment); ?>">
                             <?php endif; ?>
-                            <p class="description">Dieselbe Umgebung wie bei der Website in Harika. Produktion dort bleibt hier Produktion. <?php echo $environment_locked ? 'Dieser Wert kommt aus der Server-Konfiguration.' : 'WordPress übernimmt sie nicht von selbst.'; ?></p>
+                            <p class="description">Dieselbe Umgebung wie bei der Website in Harika.<?php echo $environment_locked ? ' Dieser Wert kommt aus der Server-Konfiguration.' : ''; ?></p>
                         </td>
                     </tr>
                     <tr>
                         <th scope="row"><label for="ccf-gads-token">Site-Token</label></th>
                         <td>
                             <input class="regular-text code" id="ccf-gads-token" name="<?php echo esc_attr(self::OPTION_NAME); ?>[site_token]" type="password" minlength="32" value="" autocomplete="new-password" <?php echo $token_locked ? 'disabled' : ''; ?>>
-                            <p class="description">Status: <strong><?php echo $configured ? 'konfiguriert' : 'nicht konfiguriert'; ?></strong>. <?php echo $token_locked ? 'Der Token kommt aus der Server-Konfiguration und wird hier nicht angezeigt.' : 'Geheimnis dieser Website aus Harika. Einmal eintragen, danach leer lassen. Der gespeicherte Token bleibt dann unverändert.'; ?></p>
+                            <p class="description">Status: <strong><?php echo $configured ? 'konfiguriert' : 'nicht konfiguriert'; ?></strong>. <?php echo $token_locked ? 'Der Token kommt aus der Server-Konfiguration und wird hier nicht angezeigt.' : 'Einmal eintragen, danach leer lassen. Der gespeicherte Token bleibt unverändert.'; ?></p>
                         </td>
                     </tr>
                 </table>
