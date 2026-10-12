@@ -2,6 +2,11 @@
 
 All notable changes to the Harika Connector are documented here.
 
+## 1.3.15 - 2026-10-12
+
+- Shorten the settings help. The values are copied from the website in Harika.
+- Keep the field labels and the site-token status.
+
 ## 1.3.14 - 2026-10-08
 
 - Explain on the WordPress settings screen that the connector values belong to the website in Harika, not to the customer master data.
