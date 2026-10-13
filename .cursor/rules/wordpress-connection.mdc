@@ -1,0 +1,13 @@
+---
+description: Check the WordPress connection together with Harika
+alwaysApply: true
+---
+
+# WordPress connection check
+
+This plugin and Harika are one connection. A change to pairing, the site token, client ID, site ID, environment, the control endpoint, or the connection check is incomplete until both directions report the same fields.
+
+- The plugin calling Harika and Harika calling this plugin are checked together. One green half is not a connected website.
+- Both sides report token accepted, client ID, site ID, environment, and website host. Harika is the source for those values. This plugin reports what it stored. A mismatch is shown on both sides and does not overwrite the website in Harika.
+- Tests for this change exercise both directions in the same case. Saving settings, or posting an event, does not by itself prove the connection.
+- Do not land a plugin-only connection check. The matching Harika change is part of the same work.
