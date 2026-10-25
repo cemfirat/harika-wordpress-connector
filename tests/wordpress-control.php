@@ -7,6 +7,7 @@ define('ARRAY_A', 'ARRAY_A');
 define('CCF_GADS_SITE_TOKEN', 'test-control-token-test-control-token-1234567890');
 define('CCF_GADS_CLIENT_ID', 'example-customer');
 define('CCF_GADS_SITE_ID', 'example-site');
+define('CCF_GADS_CONTROL_ENDPOINT', 'https://events.example');
 
 $GLOBALS['ccf_transients'] = [];
 $GLOBALS['ccf_meta'] = [
@@ -200,6 +201,30 @@ function get_permalink($post_id): string { return 'https://customer.example/serv
 function update_option($name, $value, $autoload = null): bool { return true; }
 function wp_generate_uuid4(): string { return '12345678-1234-1234-1234-123456789abc'; }
 
+$GLOBALS['connection_probe_mode'] = 'ok';
+$GLOBALS['connection_probe_requests'] = [];
+function wp_safe_remote_post($url, $args) {
+    $GLOBALS['connection_probe_requests'][] = ['url' => $url, 'args' => $args];
+    if ($GLOBALS['connection_probe_mode'] === 'unreachable') return new WP_Error('unreachable', 'Test-only outage.');
+    $identity = json_decode($args['body'], true);
+    $answer = [
+        'status' => 'verified',
+        'token_accepted' => true,
+        'client_id' => $identity['client_id'],
+        'site_id' => $identity['site_id'],
+        'environment' => $identity['environment'],
+        'website_host' => $identity['website_host'],
+        'challenge' => $identity['challenge'],
+    ];
+    if ($GLOBALS['connection_probe_mode'] === 'wrong_host') $answer['website_host'] = 'wrong.example';
+    if ($GLOBALS['connection_probe_mode'] === 'wrong_token') $answer['token_accepted'] = false;
+    if ($GLOBALS['connection_probe_mode'] === 'wrong_challenge') $answer['challenge'] = str_repeat('b', 32);
+    return ['response' => ['code' => $GLOBALS['connection_probe_mode'] === 'rejected' ? 403 : 200],
+        'body' => json_encode($answer, JSON_THROW_ON_ERROR)];
+}
+function wp_remote_retrieve_response_code($response): int { return (int) ($response['response']['code'] ?? 0); }
+function wp_remote_retrieve_body($response): string { return (string) ($response['body'] ?? ''); }
+
 require __DIR__ . '/../wordpress/harika-wordpress-connector.php';
 
 $timestamp = time();
@@ -367,5 +392,33 @@ if (($seo->data['data']['preview']['diff']['rank_math_title']['after'] ?? '') !=
 
 if ($GLOBALS['ccf_post']['post_content'] !== '<div uk-grid>Old & content \\ path</div>') throw new RuntimeException('Existing HTML or backslashes were altered.');
 if (!empty($GLOBALS['ccf_filters']['wp_insert_post_data'][PHP_INT_MAX])) throw new RuntimeException('Snapshot filter leaked beyond the write.');
+
+
+$connection = Harika_Status_Overlay::connection();
+if (!$connection instanceof WP_REST_Response || $connection->status !== 200) {
+    throw new RuntimeException('Signed reverse connection check did not return an envelope.');
+}
+$connection_data = $connection->data;
+if (($connection_data['data']['status'] ?? '') !== 'verified' ||
+    ($connection_data['data']['token_accepted'] ?? false) !== true ||
+    ($connection_data['site']['website_host'] ?? '') !== 'customer.example') {
+    throw new RuntimeException('Valid reverse connection was not verified.');
+}
+$probe = $GLOBALS['connection_probe_requests'][0] ?? null;
+if (($probe['url'] ?? '') !== 'https://events.example/v1/connection-check' ||
+    ($probe['args']['redirection'] ?? -1) !== 0 ||
+    ($probe['args']['headers']['Authorization'] ?? '') !== 'Bearer ' . CCF_GADS_SITE_TOKEN ||
+    strpos(json_encode($connection_data), CCF_GADS_SITE_TOKEN) !== false) {
+    throw new RuntimeException('Reverse connection probe leaked the token or used unexpected transport.');
+}
+foreach (['wrong_host', 'wrong_token', 'wrong_challenge', 'rejected', 'unreachable'] as $probe_mode) {
+    $GLOBALS['connection_probe_mode'] = $probe_mode;
+    $negative = Harika_Status_Overlay::connection();
+    if (($negative->data['data']['status'] ?? '') !== 'not_verified' ||
+        ($negative->data['data']['token_accepted'] ?? true) !== false ||
+        strpos(json_encode($negative->data), CCF_GADS_SITE_TOKEN) !== false) {
+        throw new RuntimeException('Reverse probe must fail closed and redact the token: ' . $probe_mode);
+    }
+}
 
 echo "WordPress control signature, scheduling, author, apply/verify, rollback, drift and SEO previews passed.\n";

@@ -2,6 +2,12 @@
 
 All notable changes to the Harika Connector are documented here.
 
+## 1.3.16 - pending release
+
+- Add a signed, read-only `/ccf-sites/v1/connection` endpoint that probes the Harika control service without emitting conversion events.
+- Expose only identity, endpoint and bounded verification status; reject missing/mismatched token, site, environment, host and challenge.
+- Keep legacy plugin slug, ZIP aliases and WordPress auto-update semantics unchanged.
+
 ## 1.3.15 - 2026-10-12
 
 - Shorten the settings help. The values are copied from the website in Harika.
