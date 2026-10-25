@@ -229,7 +229,7 @@ function wp_safe_remote_post($url, $args) {
         foreach ($headers as $name => $value) $header_lines[] = $name . ': ' . $value;
         $context = stream_context_create(['http' => [
             'method' => 'POST',
-            'header' => implode("\\r\\n", $header_lines),
+            'header' => implode("\r\n", $header_lines),
             'content' => json_encode($body, JSON_THROW_ON_ERROR),
             'timeout' => 4,
             'ignore_errors' => true,
