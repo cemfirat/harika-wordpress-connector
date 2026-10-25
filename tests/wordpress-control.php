@@ -205,6 +205,43 @@ $GLOBALS['connection_probe_mode'] = 'ok';
 $GLOBALS['connection_probe_requests'] = [];
 function wp_safe_remote_post($url, $args) {
     $GLOBALS['connection_probe_requests'][] = ['url' => $url, 'args' => $args];
+    // Cross-repository integration fixture: connect the REAL plugin status
+    // handler to the REAL local Harika events server. No network target except
+    // an explicitly supplied loopback port; never use in deployed WordPress.
+    $crossrepo_target = $GLOBALS['harika_crossrepo_target'] ?? '';
+    if (is_string($crossrepo_target) && $crossrepo_target !== '') {
+        if (!preg_match('#^http://127\\.0\\.0\\.1:[0-9]{2,5}$#', $crossrepo_target) ||
+            $url !== 'https://events.example/v1/connection-check') {
+            throw new RuntimeException('Cross-repo fixture must stay on localhost and the expected route.');
+        }
+        $mode = (string) ($GLOBALS['connection_probe_mode'] ?? 'ok');
+        if ($mode === 'unreachable') return new WP_Error('unreachable', 'Test-only local outage.');
+        $headers = $args['headers'];
+        $body = json_decode((string) $args['body'], true);
+        if (!is_array($body)) throw new RuntimeException('Invalid cross-repo probe body.');
+        if ($mode === 'wrong_token') $headers['Authorization'] = 'Bearer wrong-token';
+        if ($mode === 'wrong_client') $headers['X-CCF-Client-ID'] = 'wrong-client';
+        if ($mode === 'wrong_site') $headers['X-CCF-Site-ID'] = 'wrong-site';
+        if ($mode === 'wrong_environment') $body['environment'] = 'staging';
+        if ($mode === 'wrong_host') $body['website_host'] = 'wrong.example';
+        if ($mode === 'stale') $headers['X-CCF-Timestamp'] = '1';
+        $header_lines = [];
+        foreach ($headers as $name => $value) $header_lines[] = $name . ': ' . $value;
+        $context = stream_context_create(['http' => [
+            'method' => 'POST',
+            'header' => implode("\\r\\n", $header_lines),
+            'content' => json_encode($body, JSON_THROW_ON_ERROR),
+            'timeout' => 4,
+            'ignore_errors' => true,
+        ]]);
+        $reply = @file_get_contents($crossrepo_target . '/v1/connection-check', false, $context);
+        if ($reply === false) return new WP_Error('unreachable', 'Test-only local outage.');
+        $status = 0;
+        foreach ($http_response_header ?? [] as $line) {
+            if (preg_match('#^HTTP/[0-9.]+ ([0-9]{3})#', $line, $match)) $status = (int) $match[1];
+        }
+        return ['response' => ['code' => $status], 'body' => $reply];
+    }
     if ($GLOBALS['connection_probe_mode'] === 'unreachable') return new WP_Error('unreachable', 'Test-only outage.');
     $identity = json_decode($args['body'], true);
     $answer = [
