@@ -52,8 +52,7 @@ Content-administration calls use the same signed server-to-server control bounda
 = 1.3.16 =
 * Add signed read-only reverse connection check; reject mismatched identity and report unverified without events.
 
-
-= 1.3.16 =
+= 1.3.15 =
 * Shorten the settings help. The values are copied from the website in Harika.
 
 = 1.3.14 =
