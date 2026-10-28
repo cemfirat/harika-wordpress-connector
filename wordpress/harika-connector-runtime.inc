@@ -674,6 +674,11 @@ final class Harika_Connector {
         return in_array($value, ['development', 'staging', 'production'], true) ? $value : 'production';
     }
 
+    /** Public non-secret endpoint identity for the signed connection check. */
+    public static function control_endpoint(): string {
+        return self::endpoint();
+    }
+
     private static function endpoint(): string {
         if (defined('CCF_GADS_CONTROL_ENDPOINT') && is_string(CCF_GADS_CONTROL_ENDPOINT)) {
             return esc_url_raw((string) CCF_GADS_CONTROL_ENDPOINT);

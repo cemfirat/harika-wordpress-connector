@@ -7,6 +7,7 @@ define('ARRAY_A', 'ARRAY_A');
 define('CCF_GADS_SITE_TOKEN', 'test-control-token-test-control-token-1234567890');
 define('CCF_GADS_CLIENT_ID', 'example-customer');
 define('CCF_GADS_SITE_ID', 'example-site');
+define('CCF_GADS_CONTROL_ENDPOINT', 'https://events.example');
 
 $GLOBALS['ccf_transients'] = [];
 $GLOBALS['ccf_meta'] = [
@@ -200,6 +201,67 @@ function get_permalink($post_id): string { return 'https://customer.example/serv
 function update_option($name, $value, $autoload = null): bool { return true; }
 function wp_generate_uuid4(): string { return '12345678-1234-1234-1234-123456789abc'; }
 
+$GLOBALS['connection_probe_mode'] = 'ok';
+$GLOBALS['connection_probe_requests'] = [];
+function wp_safe_remote_post($url, $args) {
+    $GLOBALS['connection_probe_requests'][] = ['url' => $url, 'args' => $args];
+    // Cross-repository integration fixture: connect the REAL plugin status
+    // handler to the REAL local Harika events server. No network target except
+    // an explicitly supplied loopback port; never use in deployed WordPress.
+    $crossrepo_target = $GLOBALS['harika_crossrepo_target'] ?? '';
+    if (is_string($crossrepo_target) && $crossrepo_target !== '') {
+        if (!preg_match('#^http://127\\.0\\.0\\.1:[0-9]{2,5}$#', $crossrepo_target) ||
+            $url !== 'https://events.example/v1/connection-check') {
+            throw new RuntimeException('Cross-repo fixture must stay on localhost and the expected route.');
+        }
+        $mode = (string) ($GLOBALS['connection_probe_mode'] ?? 'ok');
+        if ($mode === 'unreachable') return new WP_Error('unreachable', 'Test-only local outage.');
+        $headers = $args['headers'];
+        $body = json_decode((string) $args['body'], true);
+        if (!is_array($body)) throw new RuntimeException('Invalid cross-repo probe body.');
+        if ($mode === 'wrong_token') $headers['Authorization'] = 'Bearer wrong-token';
+        if ($mode === 'wrong_client') $headers['X-CCF-Client-ID'] = 'wrong-client';
+        if ($mode === 'wrong_site') $headers['X-CCF-Site-ID'] = 'wrong-site';
+        if ($mode === 'wrong_environment') $body['environment'] = 'staging';
+        if ($mode === 'wrong_host') $body['website_host'] = 'wrong.example';
+        if ($mode === 'stale') $headers['X-CCF-Timestamp'] = '1';
+        $header_lines = [];
+        foreach ($headers as $name => $value) $header_lines[] = $name . ': ' . $value;
+        $context = stream_context_create(['http' => [
+            'method' => 'POST',
+            'header' => implode("\r\n", $header_lines),
+            'content' => json_encode($body, JSON_THROW_ON_ERROR),
+            'timeout' => 4,
+            'ignore_errors' => true,
+        ]]);
+        $reply = @file_get_contents($crossrepo_target . '/v1/connection-check', false, $context);
+        if ($reply === false) return new WP_Error('unreachable', 'Test-only local outage.');
+        $status = 0;
+        foreach ($http_response_header ?? [] as $line) {
+            if (preg_match('#^HTTP/[0-9.]+ ([0-9]{3})#', $line, $match)) $status = (int) $match[1];
+        }
+        return ['response' => ['code' => $status], 'body' => $reply];
+    }
+    if ($GLOBALS['connection_probe_mode'] === 'unreachable') return new WP_Error('unreachable', 'Test-only outage.');
+    $identity = json_decode($args['body'], true);
+    $answer = [
+        'status' => 'verified',
+        'token_accepted' => true,
+        'client_id' => $identity['client_id'],
+        'site_id' => $identity['site_id'],
+        'environment' => $identity['environment'],
+        'website_host' => $identity['website_host'],
+        'challenge' => $identity['challenge'],
+    ];
+    if ($GLOBALS['connection_probe_mode'] === 'wrong_host') $answer['website_host'] = 'wrong.example';
+    if ($GLOBALS['connection_probe_mode'] === 'wrong_token') $answer['token_accepted'] = false;
+    if ($GLOBALS['connection_probe_mode'] === 'wrong_challenge') $answer['challenge'] = str_repeat('b', 32);
+    return ['response' => ['code' => $GLOBALS['connection_probe_mode'] === 'rejected' ? 403 : 200],
+        'body' => json_encode($answer, JSON_THROW_ON_ERROR)];
+}
+function wp_remote_retrieve_response_code($response): int { return (int) ($response['response']['code'] ?? 0); }
+function wp_remote_retrieve_body($response): string { return (string) ($response['body'] ?? ''); }
+
 require __DIR__ . '/../wordpress/harika-wordpress-connector.php';
 
 $timestamp = time();
@@ -367,5 +429,33 @@ if (($seo->data['data']['preview']['diff']['rank_math_title']['after'] ?? '') !=
 
 if ($GLOBALS['ccf_post']['post_content'] !== '<div uk-grid>Old & content \\ path</div>') throw new RuntimeException('Existing HTML or backslashes were altered.');
 if (!empty($GLOBALS['ccf_filters']['wp_insert_post_data'][PHP_INT_MAX])) throw new RuntimeException('Snapshot filter leaked beyond the write.');
+
+
+$connection = Harika_Status_Overlay::connection();
+if (!$connection instanceof WP_REST_Response || $connection->status !== 200) {
+    throw new RuntimeException('Signed reverse connection check did not return an envelope.');
+}
+$connection_data = $connection->data;
+if (($connection_data['data']['status'] ?? '') !== 'verified' ||
+    ($connection_data['data']['token_accepted'] ?? false) !== true ||
+    ($connection_data['site']['website_host'] ?? '') !== 'customer.example') {
+    throw new RuntimeException('Valid reverse connection was not verified.');
+}
+$probe = $GLOBALS['connection_probe_requests'][0] ?? null;
+if (($probe['url'] ?? '') !== 'https://events.example/v1/connection-check' ||
+    ($probe['args']['redirection'] ?? -1) !== 0 ||
+    ($probe['args']['headers']['Authorization'] ?? '') !== 'Bearer ' . CCF_GADS_SITE_TOKEN ||
+    strpos(json_encode($connection_data), CCF_GADS_SITE_TOKEN) !== false) {
+    throw new RuntimeException('Reverse connection probe leaked the token or used unexpected transport.');
+}
+foreach (['wrong_host', 'wrong_token', 'wrong_challenge', 'rejected', 'unreachable'] as $probe_mode) {
+    $GLOBALS['connection_probe_mode'] = $probe_mode;
+    $negative = Harika_Status_Overlay::connection();
+    if (($negative->data['data']['status'] ?? '') !== 'not_verified' ||
+        ($negative->data['data']['token_accepted'] ?? true) !== false ||
+        strpos(json_encode($negative->data), CCF_GADS_SITE_TOKEN) !== false) {
+        throw new RuntimeException('Reverse probe must fail closed and redact the token: ' . $probe_mode);
+    }
+}
 
 echo "WordPress control signature, scheduling, author, apply/verify, rollback, drift and SEO previews passed.\n";

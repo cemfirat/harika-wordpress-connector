@@ -72,6 +72,7 @@ The event endpoint requires the current page signature, an allowed Origin/Refere
 It also exposes an authenticated control surface:
 
 - `GET /wp-json/ccf-sites/v1/status`
+- `GET /wp-json/ccf-sites/v1/connection` (HMAC-authenticated; read-only reverse handshake to the Harika control service; requires matching host registry and a current control service)
 - `GET /wp-json/ccf-sites/v1/inventory`
 - `GET /wp-json/ccf-sites/v1/content/{id}`
 - `POST /wp-json/ccf-sites/v1/changes/preview`
