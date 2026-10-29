@@ -174,7 +174,7 @@ final class Harika_Connector {
             'Harika Connector',
             'Harika Connector',
             'manage_options',
-            'ccf-google-ads',
+            'harika-connector',
             [self::class, 'render_settings_page']
         );
     }
@@ -242,6 +242,14 @@ final class Harika_Connector {
     }
 
     public static function render_settings_page(): void {
+        if (class_exists('Harika_Pairing')) {
+            Harika_Pairing::render();
+            return;
+        }
+        self::render_legacy_settings_page();
+    }
+
+    public static function render_legacy_settings_page(): void {
         if (!current_user_can('manage_options')) {
             return;
         }
@@ -651,6 +659,8 @@ final class Harika_Connector {
     }
 
     public static function client_id(): string {
+        $paired = class_exists('Harika_Pairing') ? Harika_Pairing::configuration() : null;
+        if ($paired !== null) return (string) ($paired['client_id'] ?? '');
         if (defined('CCF_GADS_CLIENT_ID')) {
             return sanitize_key((string) CCF_GADS_CLIENT_ID);
         }
@@ -659,6 +669,8 @@ final class Harika_Connector {
     }
 
     public static function site_id(): string {
+        $paired = class_exists('Harika_Pairing') ? Harika_Pairing::configuration() : null;
+        if ($paired !== null) return (string) ($paired['site_id'] ?? '');
         if (defined('CCF_GADS_SITE_ID')) {
             return sanitize_key((string) CCF_GADS_SITE_ID);
         }
@@ -667,6 +679,8 @@ final class Harika_Connector {
     }
 
     public static function environment(): string {
+        $paired = class_exists('Harika_Pairing') ? Harika_Pairing::configuration() : null;
+        if ($paired !== null) return (string) ($paired['environment'] ?? '');
         $settings = self::settings();
         $value = defined('CCF_GADS_ENVIRONMENT')
             ? sanitize_key((string) CCF_GADS_ENVIRONMENT)
@@ -680,6 +694,8 @@ final class Harika_Connector {
     }
 
     private static function endpoint(): string {
+        $paired = class_exists('Harika_Pairing') ? Harika_Pairing::configuration() : null;
+        if ($paired !== null) return (string) ($paired['control_endpoint'] ?? '');
         if (defined('CCF_GADS_CONTROL_ENDPOINT') && is_string(CCF_GADS_CONTROL_ENDPOINT)) {
             return esc_url_raw((string) CCF_GADS_CONTROL_ENDPOINT);
         }
@@ -688,12 +704,18 @@ final class Harika_Connector {
     }
 
     public static function site_token(): string {
+        $paired = class_exists('Harika_Pairing') ? Harika_Pairing::configuration() : null;
+        if ($paired !== null) return (string) ($paired['token'] ?? '');
         if (defined('CCF_GADS_SITE_TOKEN') && is_string(CCF_GADS_SITE_TOKEN)) {
             return (string) CCF_GADS_SITE_TOKEN;
         }
         $settings = self::settings();
         return isset($settings['encrypted_token']) ? self::decrypt_token((string) $settings['encrypted_token']) : '';
     }
+
+    /** Reuse the established authenticated encryption and salt context. */
+    public static function protect_pairing(string $value): string { return self::encrypt_token($value); }
+    public static function open_pairing(string $value): string { return self::decrypt_token($value); }
 
     private static function settings(): array {
         $settings = get_option(self::OPTION_NAME, []);

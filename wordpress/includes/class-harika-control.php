@@ -115,6 +115,10 @@ final class Harika_Control {
         if (get_transient($nonce_key)) {
             return new WP_Error('ccf_control_replay', 'Control request nonce was already used.', ['status' => 409]);
         }
+        if (class_exists('Harika_Pairing')) {
+            $authority = Harika_Pairing::authorize_control($request);
+            if ($authority !== true) return $authority;
+        }
         set_transient($nonce_key, 1, self::NONCE_TTL);
         return true;
     }

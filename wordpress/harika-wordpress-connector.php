@@ -2,7 +2,7 @@
 /**
  * Plugin Name: Harika Connector
  * Description: Secure WordPress control, content administration and conversion connector for Harika.
- * Version: 1.3.16
+ * Version: 1.4.0
  * Requires at least: 6.0
  * Requires PHP: 7.4
  * Author: Cem Firat
@@ -12,7 +12,7 @@
 
 defined('ABSPATH') || exit;
 
-define('HARIKA_CONNECTOR_VERSION', '1.3.16');
+define('HARIKA_CONNECTOR_VERSION', '1.4.0');
 define('HARIKA_CONNECTOR_FILE', __FILE__);
 define('CCF_SITES_ADS_PLUGIN_VERSION', HARIKA_CONNECTOR_VERSION);
 define('CCF_SITES_ADS_PLUGIN_FILE', HARIKA_CONNECTOR_FILE);
@@ -34,6 +34,8 @@ require_once __DIR__ . '/includes/class-harika-status-overlay.php';
 Harika_Status_Overlay::init();
 require_once __DIR__ . '/includes/class-harika-authors.php';
 Harika_Authors::init();
+require_once __DIR__ . '/includes/class-harika-pairing.php';
+Harika_Pairing::init();
 
 final class Harika_Connector_Updater {
     private const REPOSITORY = 'cemfirat/harika-wordpress-connector';
