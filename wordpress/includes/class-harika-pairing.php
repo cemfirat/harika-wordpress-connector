@@ -11,7 +11,8 @@ final class Harika_Pairing {
 
     public static function init(): void {
         add_action('rest_api_init', [self::class, 'routes']);
-        add_action('admin_init', [self::class, 'admin_redirect']);
+        // WordPress checks registered menu-page access before admin_init.
+        add_action('admin_menu', [self::class, 'admin_redirect']);
         add_action('admin_post_harika_pairing_start', [self::class, 'start_action']);
         add_action('admin_post_harika_pairing_callback', [self::class, 'callback_action']);
         add_action('admin_post_harika_pairing_check', [self::class, 'check_action']);

@@ -2,7 +2,13 @@
 
 All notable changes to the Harika Connector are documented here.
 
-## 1.4.0 - pending coordinated release
+## 1.4.1 - 2026-10-29
+
+- Redirect the old settings URL before WordPress checks whether its menu page exists.
+- Refresh server-rendered actions when pairing verification finishes, so a verified connection no longer shows the pending-attempt cancellation label.
+- Add regression coverage for admin navigation, access restrictions and polling completion (Harika #527).
+
+## 1.4.0 - 2026-10-29
 
 - Add guided WordPress pairing through existing Harika rights, PKCE and one-time state.
 - Keep site credentials encrypted on the servers; show verified only after both connection directions match.

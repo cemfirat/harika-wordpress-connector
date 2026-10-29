@@ -2,7 +2,7 @@
 Contributors: cemfirat
 Requires at least: 6.0
 Requires PHP: 7.4
-Stable tag: 1.4.0
+Stable tag: 1.4.1
 License: Proprietary / private project
 
 Secure WordPress control, content administration and conversion connector for Harika.
@@ -27,7 +27,7 @@ Raw form contents, names, email addresses, phone numbers, message bodies and upl
 
 == Installation ==
 
-1. Install harika-wordpress-connector-v1.4.0.zip on the customer WordPress website. The same bytes are also published as harika-wordpress-connector.zip and ccf-sites-ads-connector.zip so an already installed connector can update.
+1. Install harika-wordpress-connector-v1.4.1.zip on the customer WordPress website. The same bytes are also published as harika-wordpress-connector.zip and ccf-sites-ads-connector.zip so an already installed connector can update.
 2. Activate Harika Connector and open Settings > Harika Connector.
 3. Choose Mit Harika verbinden and use your existing Harika account with access to this website.
 4. Complete the guided connection. Both directions must be verified. Existing manual connections retain their configuration.
@@ -49,6 +49,10 @@ The site token is server-side only. Browser requests use a short-lived same-orig
 Content-administration calls use the same signed server-to-server control boundary. Media import is limited to public HTTPS image sources and blocks private/reserved destinations, unsupported MIME types and files larger than 10 MB. Published content cannot be modified or trashed through the direct draft-first endpoints.
 
 == Changelog ==
+= 1.4.1 =
+* Fix old settings links before WordPress menu access checks.
+* Refresh connection actions after pairing verification finishes.
+
 = 1.4.0 =
 * Connect an existing Harika website from WordPress admin with one-use codes and server-side PKCE exchange.
 * Keep website credentials private, verify both connection directions together and support revocation and safe recovery.
