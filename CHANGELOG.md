@@ -2,7 +2,15 @@
 
 All notable changes to the Harika Connector are documented here.
 
-## 1.3.16 - pending release
+## 1.4.0 - pending coordinated release
+
+- Add guided WordPress pairing through existing Harika rights, PKCE and one-time state.
+- Keep site credentials encrypted on the servers; show verified only after both connection directions match.
+- Preserve prior connections during failure recovery and prevent legacy fallback after activation or revocation.
+- Keep the installed directory, option names, encryption context and update identity compatible.
+- Release only after the matching Harika API, gateway and Control service are ready (Harika #527).
+
+## 1.3.16
 
 - Add a signed, read-only `/ccf-sites/v1/connection` endpoint that probes the Harika control service without emitting conversion events.
 - Expose only identity, endpoint and bounded verification status; reject missing/mismatched token, site, environment, host and challenge.

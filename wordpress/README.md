@@ -178,3 +178,19 @@ Before production activation:
 6. Test phone, email, WhatsApp, and approved form events in a non-production environment first.
 7. Verify the `/bootstrap` response is not cached by any reverse proxy/CDN.
 8. Keep Google Ads credentials and Ads writes in the central service, never in WordPress.
+
+## Geführte Verbindung (1.4.0)
+
+Unter Einstellungen → Harika Connector startet „Mit Harika verbinden“ die Einrichtung.
+Die Website muss in Harika bereits angelegt sein. WordPress-Administratorrechte und
+vorhandene Harika-Rechte für diese Website sind erforderlich. Zugangsdaten bleiben
+verschlüsselt auf den Servern; beide Verbindungsrichtungen werden gemeinsam geprüft.
+`page=ccf-google-ads` bleibt als Weiterleitung kompatibel. Bestehende Verbindungen
+werden nicht automatisch ersetzt. Feste Werte in `wp-config.php` benötigen eine
+bewusste Umstellung. Nach Aktivierung oder Widerruf gibt es keinen Rückfall auf
+den gemeinsamen alten Token.
+
+Koordinierter Auftrag: cemfirat/harika#527. Plugin-Merge löst ein Release aus; daher
+erst nach bereitem Backend/Control-Dienst mergen. Die gemeinsamen Offline-Tests
+liegen im Harika-Repository und pinnen diesen Plugin-Stand exakt. Lokale Tests,
+CI und die produktiven Nachweise für cemfirat.com und AMBRA sind getrennte Gates.
