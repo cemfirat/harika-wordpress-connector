@@ -13,6 +13,8 @@
       root.querySelector('[data-message]').textContent = value.message;
       root.querySelector('[data-identity]').textContent = [value.organization, value.website].filter(x => typeof x === 'string').join(' · ');
       root.dataset.state = value.state;
+      // Render actions from the same persisted state as the final status.
+      if (value.state !== 'checking') { window.location.reload(); return; }
       if (value.state === 'checking' && ++attempts < 75) setTimeout(poll, 4000);
     } catch {
       root.querySelector('[data-message]').textContent = 'Der Status ist derzeit nicht überprüfbar. Bitte erneut prüfen.';
